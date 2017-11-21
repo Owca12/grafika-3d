@@ -36,7 +36,7 @@ function init()
     V = mat4.create();
 	uM = mat4.create();
     mat4.perspective(P, Math.PI/2, 1, 1, 20) // takie same jednostki jak w lookAT
-    mat4.lookAt(V,[3, 2, 8],[0, 0.0, 0],[0, 1, 0])
+    mat4.lookAt(V,[3, 2, 8],[3, 0.0, 0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
     let color_ubb = 0;
@@ -174,7 +174,7 @@ function draw_grid()
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	if (counter == 0)
 	{
-		mat4.rotate(V,V,Math.PI/4, [0,1,0]);
+		mat4.rotate(V,V,Math.PI/2, [0,1,0]);
 		transformation_matrix.set(V,16);
 		gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
 	}
@@ -182,7 +182,7 @@ function draw_grid()
 	for (i=0;i<10;i++) {
 		for (j=0;j<10;j++) {
 			var inner_T = mat4.create();
-			mat4.translate(inner_T,inner_T,[1*j+i*1,0,1*i]);
+			mat4.translate(inner_T,inner_T,[1*j,0,1*i]);
 			transformation_matrix.set(inner_T,32);
 			gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
 			gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0); 
@@ -192,7 +192,7 @@ function draw_grid()
 	for (i=0;i<10;i++) {
 		for (j=0;j<10;j++) {
 			var inner_T = mat4.create();
-			mat4.translate(inner_T,inner_T,[1*j+i*1,0.6,1*i]);
+			mat4.translate(inner_T,inner_T,[1*j,0.6,1*i]);
 			mat4.rotate(inner_T,inner_T,Math.PI, [0,0,1]);
 			transformation_matrix.set(inner_T,32);
 			gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
@@ -208,7 +208,7 @@ function animate_grid()
     exTime = now;
 	if (counter != 0)
 	{
-		mat4.translate(V,V,[-0.3 * elapsed/onerev,0,-0.3 * elapsed/onerev]);
+		mat4.translate(V,V,[-0.5 * elapsed/onerev,0,0]);
 		transformation_matrix.set(V,16);
 	}
 	//lz_camera += 0.1 * elapsed/onerev;
