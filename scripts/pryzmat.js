@@ -1,7 +1,7 @@
 "use strict";
 
 var gl, vertex_ubb, vertex_ubo, vertex_uniform_id;
-var T,R,P,V,uM, transformation_matrix, lz_camera = 0.0;
+var T,R,P,V,uM, transformation_matrix;
 var uMlocation, Plocation, Vlocation;
 
 function init()
@@ -36,7 +36,7 @@ function init()
     V = mat4.create();
 	uM = mat4.create();
     mat4.perspective(P, Math.PI/2, 1, 1, 20) // takie same jednostki jak w lookAT
-    mat4.lookAt(V,[3, 2, 3 - lz_camera ],[3, 0.0, 0 - lz_camera],[0, 1, 0])
+    mat4.lookAt(V,[3, 2, 8],[0, 0.0, 0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
     let color_ubb = 0;
@@ -171,9 +171,10 @@ function update()
 var counter = 0;
 function draw_grid()
 {
+	gl.clear(gl.COLOR_BUFFER_BIT);
 	if (counter == 0)
 	{
-		mat4.rotate(V,V,Math.PI/2, [0,1,0]);
+		mat4.rotate(V,V,Math.PI/4, [0,1,0]);
 		transformation_matrix.set(V,16);
 		gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
 	}
@@ -205,20 +206,19 @@ function animate_grid()
 	var now = Date.now();
     var elapsed = now - exTime;
     exTime = now;
+	if (counter != 0)
+	{
+		mat4.translate(V,V,[-0.3 * elapsed/onerev,0,-0.3 * elapsed/onerev]);
+		transformation_matrix.set(V,16);
+	}
 	//lz_camera += 0.1 * elapsed/onerev;
-    counter++;
-	draw_grid()
+	draw_grid();
+	counter++;
 }
 function update_grid()
 {
-	var now = Date.now();
-    var elapsed = now - exTime;
-    exTime = now;
-	lz_camera += 0.1 * elapsed/onerev;
-	mat4.lookAt(V,[3, 2, 3 - lz_camera ],[3, 0.0, 0 - lz_camera],[0, 1, 0])
 	window.requestAnimationFrame(update_grid);
-	counter++;
-	draw_grid();
+	animate_grid();
 }
 
 function main()
