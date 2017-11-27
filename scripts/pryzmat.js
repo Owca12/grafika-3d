@@ -1,8 +1,54 @@
 "use strict";
 
-var gl;
-var T,R,P,V;
+var gl, vertex_ubb, vertex_ubo, vertex_uniform_id;
+var T,R,P,V,uM, transformation_matrix;
 var uMlocation, Plocation, Vlocation;
+
+function loadTexture(gl, url) {
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Because images have to be download over the internet
+  // they might take a moment until they are ready.
+  // Until then put a single pixel in the texture so we can
+  // use it immediately. When the image has finished downloading
+  // we'll update the texture with the contents of the image.
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 1;
+  const height = 1;
+  const border = 0;
+  const srcFormat = gl.RGBA;
+  const srcType = gl.UNSIGNED_BYTE;
+  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                width, height, border, srcFormat, srcType,
+                pixel);
+
+  const image = new Image();
+  image.onload = function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, image);
+
+    // WebGL1 has different requirements for power of 2 images
+    // vs non power of 2 images so check if the image is a
+    // power of 2 in both dimensions.
+    if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+       // Yes, it's a power of 2. Generate mips.
+       gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+       // No, it's not a power of 2. Turn of mips and set
+       // wrapping to clamp to edge
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+  };
+  image.src = url;
+
+  return texture;
+}
 
 function init()
 {
@@ -28,62 +74,66 @@ function init()
     var program = createProgram(gl, vertex_shader, fragment_shader);
 
     // pobranie ubi
-    var color_ubi = gl.getUniformBlockIndex(program, "TriangleColor");
-    uMlocation = gl.getUniformLocation(program,'uM');
-    Plocation = gl.getUniformLocation(program,'P');
-    Vlocation = gl.getUniformLocation(program,'V');
+    //var color_ubi = gl.getUniformBlockIndex(program, "TriangleColor");
+	var vertex_ubi = gl.getUniformBlockIndex(program, "Metrices");
     T = mat4.create();
     R = mat4.create();
     P = mat4.create();
     V = mat4.create();
+	uM = mat4.create();
     mat4.perspective(P, Math.PI/4, 1, 2, 6) // takie same jednostki jak w lookAT
     mat4.lookAt(V,[2, 2, 3],[0.0, 0.0, 0.0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
-    let color_ubb = 0;
-    gl.uniformBlockBinding(program, color_ubi, color_ubb);
+    // let color_ubb = 0;
+    // gl.uniformBlockBinding(program, color_ubi, color_ubb);
+	let vertex_ubb = 0;
+    gl.uniformBlockBinding(program, vertex_ubi, vertex_ubb);
 
-var vertices = new Float32Array( [
+	var vertices = new Float32Array( [
+        // Front face
+        0, 0, 0.3, // 0
+        0, 0.3, 0, // 1
+        0.3, 0, 0, // 2
+        // Back face
+        -0.3, 0, 0, // 3
+        0, 0, -0.3, // 4
+
+	]);
+	
+	var colors =  new Float32Array( [
         // Front face
         0, 0, 1, // 0
-        0, 1, 0, // 1
-        1, 0, 0, // 2
-        // Back face
-        -1, 0, 0, // 3
-        0, 0, -1, // 4
-        0, 1, 0, // 1
-        // Left face
-        0, 0, 1, // 0
-        0, 1, 0, // 1
-        -1, 0, 0, //3
-        // Right face
-        0, 0, -1, //4
-        0, 1, 0, //1
-        1, 0, 0, // 2
-        // Base
-        0, 0, -1, // 4
-        0, 0, 1,  // 0
-        1, 0, 0, // 2
-        0, 0, -1, // 4
-        0, 0, 1, // 0
-        -1, 0, 0 // 3
-]);
+        1, 0, 1, // 1
+        0, 0, 1, // 2
+        // // Back face
+        0, 0, 1, // 3
+        0, 0, 1 // 4
+	]);
 
     // tworzenie VBO
     var vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	
+	var color_vbo = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
+	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+	//gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	
 
     // dane o indeksach
     var indices = new Uint16Array([0, 2, 1,
+                        1, 2, 4,
                         4, 3, 1,
-                        0, 3, 1,
-                        4, 2, 1,
-                        4, 0, 2,
-                        4, 0, 3]);
+                        1, 3, 0,
+                        0, 2, 4,
+                        4, 3, 0]);
+	//var indices = new Uint16Array([0,2,1]); 
 
-    // tworzenie bufora indeksow
+    // tworzenie bufora indeksow EBO
     var index_buffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
@@ -95,27 +145,76 @@ var vertices = new Float32Array( [
     var vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.enableVertexAttribArray(gpu_positions_attrib_location);
     gl.vertexAttribPointer(gpu_positions_attrib_location, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
+    //gl.bindVertexArray(null);
+    //gl.bindBuffer(gl.ARRAY_BUFFER, null);
+   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+	
+	
+	var color_index = gl.getAttribLocation(program, "vertex_color");
+	
+	//var color_vao = gl.createVertexArray();
+    //gl.bindVertexArray(color_vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
+    //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+    gl.enableVertexAttribArray(color_index);
+    gl.vertexAttribPointer(color_index, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
+	
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.bindVertexArray(null);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
     // dane o kolorze
-    var triangle_color = new Float32Array([0.0, 0.5, 0.5, 0.0]);
-
-    // tworzenie UBO
-    var color_ubo = gl.createBuffer();
-    gl.bindBuffer(gl.UNIFORM_BUFFER, color_ubo);
-    gl.bufferData(gl.UNIFORM_BUFFER, triangle_color, gl.DYNAMIC_DRAW);
+    //var triangle_color = new Float32Array([0.0, 0.5, 0.5, 0.0]);
+	transformation_matrix = new Float32Array(48);
+	
+	var i = 0;
+	for (i=0;i<16;i++)
+	{
+		console.log("P number: " + i + "and value: " + P[i]);
+	}
+	for (i = 0; i < 16; i++) 
+	{
+		transformation_matrix[i] = P[i];
+	}
+	
+	for (i = 0; i < 16; i++)
+	{
+		transformation_matrix[16+i] = V[i];
+	}
+	
+	for (i = 0; i < 16; i++)
+	{
+		transformation_matrix[32+i] = uM[i];
+	}
+	
+	console.log("Cheking transformation array");
+	for (i=0;i<48;i++)
+	{
+		console.log("Variable number: " + i + "and value: " + transformation_matrix[i]);
+	}
+	
+		// tworzenie UBO
+    vertex_ubo = gl.createBuffer();
+    gl.bindBuffer(gl.UNIFORM_BUFFER, vertex_ubo);
+    gl.bufferData(gl.UNIFORM_BUFFER, transformation_matrix, gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+	
+    // // tworzenie UBO
+    // var color_ubo = gl.createBuffer();
+    // gl.bindBuffer(gl.UNIFORM_BUFFER, color_ubo);
+    // gl.bufferData(gl.UNIFORM_BUFFER, triangle_color, gl.DYNAMIC_DRAW);
+    // gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 
     // ustawienia danych dla funkcji draw*
+	
     gl.useProgram(program);
-    gl.uniformMatrix4fv(uMlocation,false , T );
     gl.bindVertexArray(vao);
-    gl.bindBufferBase(gl.UNIFORM_BUFFER, color_ubb, color_ubo);
+	//gl.bindVertexArray(color_vao);
+    // gl.bindBufferBase(gl.UNIFORM_BUFFER, color_ubb, color_ubo);
+	gl.bindBufferBase(gl.UNIFORM_BUFFER, vertex_ubb, vertex_ubo);
 }
 
 var xAnimationCounter = 0;
@@ -125,22 +224,23 @@ function draw()
 {
     // wyczyszczenie ekranu
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniformMatrix4fv(uMlocation,false , T );
-    gl.uniformMatrix4fv(Plocation,false , P );
+    //gl.uniformMatrix4fv(uMlocation,false , T );
+    //gl.uniformMatrix4fv(Plocation,false , P );
     if ( xAnimationCounter == 0) {
-        mat4.rotate(V,V,-Math.PI/4, [1,0,0]);
+       mat4.rotate(V,V,-Math.PI/4, [1,0,0]);
     }
     var now = Date.now();
     var elapsed = now - exTime;
     exTime = now;
     var angle = Math.PI * 2 * elapsed/onerev;
     mat4.rotate(V,V,angle, [0,1,0]);
-    gl.uniformMatrix4fv(Vlocation,false , V );
+	
+	transformation_matrix.set(V,16);
+	
     xAnimationCounter++;
-
-    // wyslanie polecania rysowania do GPU (odpalenie shader-ow)
-    //gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+    gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
+	
+    gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);  
 
     
 }
@@ -191,14 +291,20 @@ function createProgram(gl, vertex_shader, fragment_shader)
 
 // vertex shader (GLSL)
 var vs_source = "#version 300 es\n" +
-    "uniform mat4 uM;\n" +
-    "uniform mat4 P;\n" +
-    "uniform mat4 V;\n" +
     // "location" musi byc takie same jak po stronie CPU!!!
     "layout(location = 0) in vec4 vertex_position;\n" +
+	"layout(location = 1) in vec3 vertex_color;\n" +
+	"out vec3 vert_frag_color;\n" +
+	"layout(std140) uniform Metrices\n" +
+	"{\n" +
+		"mat4 P;\n" +
+		"mat4 V;\n" +
+		"mat4 uM;\n" +
+    "};\n" +
     "void main()\n" +
     "{\n" +
         "gl_Position = P*V*uM*vertex_position;\n" +
+		"vert_frag_color = vertex_color;\n" +
     "}\n";
 
 // fragment shader (GLSL)
@@ -206,14 +312,10 @@ var fs_source = "#version 300 es\n" +
     // fs nie ma domyślnej precyzji dla liczb zmiennoprzecinkowych więc musimy wybrać ją sami
     "precision mediump float;\n" +
     "out vec4 frag_color;\n" +
-    "layout(std140) uniform TriangleColor\n" +
-    "{\n" +
-        "vec3 triangle_color;\n" +
-    "};\n" +
+	"in vec3 vert_frag_color;\n" +
     "void main()\n" +
     "{\n" +
-        //"frag_color = vec4(1, 0, 0, 1);\n" +
-        "frag_color = vec4(triangle_color, 1);\n" +
+        "frag_color = vec4(vert_frag_color,1);\n" +
     "}\n";
 
 main();
