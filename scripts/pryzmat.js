@@ -93,8 +93,8 @@ function init()
     P = mat4.create();
     V = mat4.create();
 	uM = mat4.create();
-    mat4.perspective(P, Math.PI/4, 1, 2, 6) // takie same jednostki jak w lookAT
-    mat4.lookAt(V,[2, 2, 3],[0.0, 0.0, 0.0],[0, 1, 0])
+    mat4.perspective(P, Math.PI/4, 1, 1, 8) // takie same jednostki jak w lookAT
+    mat4.lookAt(V,[2, 2, 3],[0,0,0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
     // let color_ubb = 0;
@@ -103,13 +103,12 @@ function init()
     gl.uniformBlockBinding(program, vertex_ubi, vertex_ubb);
 
 	var vertices = new Float32Array( [
-        // Front face
-        0, 0, 1, // 0
-        0, 1, 0, // 1
-        1, 0, 0, // 2
-        // Back face
-        -1, 0, 0, // 3
-        0, 0, -1, // 4
+        -0.5, 0, 0.5,
+		0, 1, 0,		// 0
+		0.5, 0, 0.5,
+		-0.5, 0, -0.5,		// 1
+		0.5, 0, -0.5,          // 2
+
 
 	]);
 	
@@ -125,7 +124,17 @@ function init()
 	
 	var texture_coordinates = [
 	
-    // 0,1,4
+		// 0,1,2
+    0.0,  1.0,
+    0.0,  0.0,
+    1.0,  0.0,
+
+    // 2,3,0
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+	
+    // 0,2,1
     0.0,  0.0,
     1.0,  0.0,
     0.5,  1.0,
@@ -144,16 +153,7 @@ function init()
     0.0,  0.0,
     1.0,  0.0,
     0.5,  1.0,
-	
-	// 0,1,2
-    0.0,  1.0,
-    0.0,  0.0,
-    1.0,  0.0,
 
-    // 2,3,0
-    1.0,  0.0,
-    1.0,  1.0,
-    0.0,  1.0,
   ];
 
     // tworzenie VBO
@@ -173,14 +173,14 @@ function init()
     gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
 	
-
     // dane o indeksach
-    var indices = new Uint16Array([0, 2, 1,
-                        1, 2, 4,
+    var indices = new Uint16Array([
+	                    0, 2, 4,
+                        4, 3, 0,
+						0, 2, 1,
+                        2, 4, 1,
                         4, 3, 1,
-                        1, 3, 0,
-                        0, 2, 4,
-                        4, 3, 0]);
+                        3, 0, 1,]);
 	//var indices = new Uint16Array([0,2,1]); 
 
     // tworzenie bufora indeksow EBO
