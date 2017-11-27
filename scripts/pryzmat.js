@@ -23,7 +23,7 @@ function loadTexture(gl, url) {
   const border = 0;
   const srcFormat = gl.RGBA;
   const srcType = gl.UNSIGNED_BYTE;
-  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+  const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
   gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                 width, height, border, srcFormat, srcType,
                 pixel);
@@ -78,7 +78,13 @@ function init()
     var vertex_shader = createShader(gl, gl.VERTEX_SHADER, vs_source);
     var fragment_shader = createShader(gl, gl.FRAGMENT_SHADER, fs_source);
     var program = createProgram(gl, vertex_shader, fragment_shader);
-
+    gl.useProgram(program);
+	    // Wczyywanie textury, zaraz po tym jak mam program
+	const textLocation = gl.getUniformLocation(program, 'text');
+    const text = loadTexture(gl, image);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, text);
+    gl.uniform1i(textLocation, 0);
     // pobranie ubi
     //var color_ubi = gl.getUniformBlockIndex(program, "TriangleColor");
 	var vertex_ubi = gl.getUniformBlockIndex(program, "Metrices");
@@ -119,7 +125,6 @@ function init()
 	
 	var texture_coordinates = [
 	
-
     // 0,1,4
     0.0,  0.0,
     1.0,  0.0,
@@ -200,10 +205,15 @@ function init()
     // gl.enableVertexAttribArray(color_index);
     // gl.vertexAttribPointer(color_index, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
 	
-	const textLocation = gl.getUniformLocation(program, 'text');
+	
+	// gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
+    // gl.enableVertexAttribArray(textLocation);
+    // gl.vertexAttribPointer(textLocation, 2, gl.FLOAT, gl.FALSE, 2*4, 0); // 1, 4, float, false, 4*4, 0
+	
 	gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
-    gl.enableVertexAttribArray(textLocation);
-    gl.vertexAttribPointer(textLocation, 2, gl.FLOAT, gl.FALSE, 2*4, 0); // 1, 4, float, false, 2*4, 0
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 2*4, 0);
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.bindVertexArray(null);
@@ -252,12 +262,7 @@ function init()
 
     // ustawienia danych dla funkcji draw*
 	
-    gl.useProgram(program);
-	    // Wczyywanie textury, zaraz po tym jak mam program
-    const text = loadTexture(gl, image);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, text);
-    gl.uniform1i(textLocation, 0);
+
 	
     gl.bindVertexArray(vao);
 	//gl.bindVertexArray(color_vao);
