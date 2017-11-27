@@ -3,6 +3,9 @@
 var gl, vertex_ubb, vertex_ubo, vertex_uniform_id;
 var T,R,P,V,uM, transformation_matrix;
 var uMlocation, Plocation, Vlocation;
+//const image = require('file-loader!./textura.png');
+const image = new Image();
+image.src = "textura.PNG";
 
 function loadTexture(gl, url) {
   const texture = gl.createTexture();
@@ -25,7 +28,6 @@ function loadTexture(gl, url) {
                 width, height, border, srcFormat, srcType,
                 pixel);
 
-  const image = new Image();
   image.onload = function() {
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
@@ -45,9 +47,13 @@ function loadTexture(gl, url) {
        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     }
   };
-  image.src = url;
+  //image.src = url;
 
   return texture;
+}
+
+function isPowerOf2(value) {
+  return (value & (value - 1)) == 0;
 }
 
 function init()
@@ -92,12 +98,12 @@ function init()
 
 	var vertices = new Float32Array( [
         // Front face
-        0, 0, 0.3, // 0
-        0, 0.3, 0, // 1
-        0.3, 0, 0, // 2
+        0, 0, 1, // 0
+        0, 1, 0, // 1
+        1, 0, 0, // 2
         // Back face
-        -0.3, 0, 0, // 3
-        0, 0, -0.3, // 4
+        -1, 0, 0, // 3
+        0, 0, -1, // 4
 
 	]);
 	
@@ -110,6 +116,40 @@ function init()
         0, 0, 1, // 3
         0, 0, 1 // 4
 	]);
+	
+	var texture_coordinates = [
+	
+
+    // 0,1,4
+    0.0,  0.0,
+    1.0,  0.0,
+    0.5,  1.0,
+
+    // 1,2,4
+    0.0,  0.0,
+    1.0,  0.0,
+    0.5,  1.0,
+
+    // 2,3,4
+    0.0,  0.0,
+    1.0,  0.0,
+    0.5,  1.0,
+
+    // 3, 0, 4
+    0.0,  0.0,
+    1.0,  0.0,
+    0.5,  1.0,
+	
+	// 0,1,2
+    0.0,  1.0,
+    0.0,  0.0,
+    1.0,  0.0,
+
+    // 2,3,0
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+  ];
 
     // tworzenie VBO
     var vbo = gl.createBuffer();
@@ -120,8 +160,13 @@ function init()
 	var color_vbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
 	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-	//gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	
+	//texture VBO
+	var texture_coord_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
 	
 
     // dane o indeksach
@@ -147,29 +192,26 @@ function init()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.enableVertexAttribArray(gpu_positions_attrib_location);
     gl.vertexAttribPointer(gpu_positions_attrib_location, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
-    //gl.bindVertexArray(null);
-    //gl.bindBuffer(gl.ARRAY_BUFFER, null);
-   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
 	
 	
-	var color_index = gl.getAttribLocation(program, "vertex_color");
+	// var color_index = gl.getAttribLocation(program, "vertex_color");
+    // gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
+    // gl.enableVertexAttribArray(color_index);
+    // gl.vertexAttribPointer(color_index, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
 	
-	//var color_vao = gl.createVertexArray();
-    //gl.bindVertexArray(color_vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
-    //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl.enableVertexAttribArray(color_index);
-    gl.vertexAttribPointer(color_index, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
+	const textLocation = gl.getUniformLocation(program, 'text');
+	gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
+    gl.enableVertexAttribArray(textLocation);
+    gl.vertexAttribPointer(textLocation, 2, gl.FLOAT, gl.FALSE, 2*4, 0); // 1, 4, float, false, 2*4, 0
 	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.bindVertexArray(null);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
-    // dane o kolorze
-    //var triangle_color = new Float32Array([0.0, 0.5, 0.5, 0.0]);
-	transformation_matrix = new Float32Array(48);
 	
+	transformation_matrix = new Float32Array(48);
 	var i = 0;
 	for (i=0;i<16;i++)
 	{
@@ -211,6 +253,12 @@ function init()
     // ustawienia danych dla funkcji draw*
 	
     gl.useProgram(program);
+	    // Wczyywanie textury, zaraz po tym jak mam program
+    const text = loadTexture(gl, image);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, text);
+    gl.uniform1i(textLocation, 0);
+	
     gl.bindVertexArray(vao);
 	//gl.bindVertexArray(color_vao);
     // gl.bindBufferBase(gl.UNIFORM_BUFFER, color_ubb, color_ubo);
@@ -293,8 +341,8 @@ function createProgram(gl, vertex_shader, fragment_shader)
 var vs_source = "#version 300 es\n" +
     // "location" musi byc takie same jak po stronie CPU!!!
     "layout(location = 0) in vec4 vertex_position;\n" +
-	"layout(location = 1) in vec3 vertex_color;\n" +
-	"out vec3 vert_frag_color;\n" +
+	"layout(location = 1) in vec2 textureCoord; // !!!\n" +
+	"out vec2 vert_frag_text_coord; // !!!\n" +
 	"layout(std140) uniform Metrices\n" +
 	"{\n" +
 		"mat4 P;\n" +
@@ -304,7 +352,7 @@ var vs_source = "#version 300 es\n" +
     "void main()\n" +
     "{\n" +
         "gl_Position = P*V*uM*vertex_position;\n" +
-		"vert_frag_color = vertex_color;\n" +
+		"vert_frag_text_coord = textureCoord;\n" +
     "}\n";
 
 // fragment shader (GLSL)
@@ -313,9 +361,11 @@ var fs_source = "#version 300 es\n" +
     "precision mediump float;\n" +
     "out vec4 frag_color;\n" +
 	"in vec3 vert_frag_color;\n" +
+	"in vec2 vert_frag_text_coord;\n" +
+	"uniform sampler2D text;\n" +
     "void main()\n" +
     "{\n" +
-        "frag_color = vec4(vert_frag_color,1);\n" +
+        "frag_color = texture(text,vert_frag_text_coord);\n" +
     "}\n";
 
 main();
