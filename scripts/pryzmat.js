@@ -73,6 +73,9 @@ function init()
     }
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.enable(gl.CULL_FACE);
+    gl.frontFace(gl.CCW);
+    gl.cullFace(gl.BACK);
 
     // kompilacja shader-ow
     var vertex_shader = createShader(gl, gl.VERTEX_SHADER, vs_source);
@@ -93,8 +96,8 @@ function init()
     P = mat4.create();
     V = mat4.create();
 	uM = mat4.create();
-    mat4.perspective(P, Math.PI/4, 1, 1, 8) // takie same jednostki jak w lookAT
-    mat4.lookAt(V,[2, 2, 3],[0,0,0],[0, 1, 0])
+    mat4.perspective(P, Math.PI/4, 1, 1, 100) // takie same jednostki jak w lookAT
+    mat4.lookAt(V,[2, 2, 5],[0,0,0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
     // let color_ubb = 0;
@@ -125,35 +128,40 @@ function init()
 	var texture_coordinates = [
 	
 		// 0,1,2
-    0.0,  1.0,
-    0.0,  0.0,
-    1.0,  0.0,
+    // 0.0, 0.0,
+	// 0.5,  0.5,
+    // 1.0, 0.0,
+	// 0.0,  1.0,
+    // 1.0, 1.0,
 
+	1.0, 0.0,
+	0.5,  0.5,
+    0.0, 0.0,
+	1.0,  1.0,
+    0.0, 1.0,
     // 2,3,0
-    1.0,  0.0,
-    1.0,  1.0,
-    0.0,  1.0,
+
+    // 1.0,  1.0
 	
-    // 0,2,1
-    0.0,  0.0,
-    1.0,  0.0,
-    0.5,  1.0,
+    // // 0,2,1
+    // 0.0,  0.0,
+    // 1.0,  0.0,
+    // 0.5,  1.0,
 
-    // 1,2,4
-    0.0,  0.0,
-    1.0,  0.0,
-    0.5,  1.0,
+    // // 1,2,4
+    // 0.0,  0.0,
+    // 1.0,  0.0,
+    // 0.5,  1.0,
 
-    // 2,3,4
-    0.0,  0.0,
-    1.0,  0.0,
-    0.5,  1.0,
+    // // 2,3,4
+    // 0.0,  0.0,
+    // 1.0,  0.0,
+    // 0.5,  1.0,
 
-    // 3, 0, 4
-    0.0,  0.0,
-    1.0,  0.0,
-    0.5,  1.0,
-
+    // // 3, 0, 4
+    // 0.0,  0.0,
+    // 1.0,  0.0,
+    // 0.5,  1.0,
   ];
 
     // tworzenie VBO
@@ -165,7 +173,6 @@ function init()
 	var color_vbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
 	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 	
 	//texture VBO
@@ -175,8 +182,8 @@ function init()
 	
     // dane o indeksach
     var indices = new Uint16Array([
-	                    0, 2, 4,
-                        4, 3, 0,
+	                    0, 3, 4,
+                        4, 2, 0,
 						0, 2, 1,
                         2, 4, 1,
                         4, 3, 1,
@@ -211,7 +218,6 @@ function init()
     // gl.vertexAttribPointer(textLocation, 2, gl.FLOAT, gl.FALSE, 2*4, 0); // 1, 4, float, false, 4*4, 0
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 2*4, 0);
 	
@@ -280,20 +286,21 @@ function draw()
     //gl.uniformMatrix4fv(uMlocation,false , T );
     //gl.uniformMatrix4fv(Plocation,false , P );
     if ( xAnimationCounter == 0) {
-       mat4.rotate(V,V,-Math.PI/4, [1,0,0]);
+       mat4.rotate(uM,uM,-Math.PI/4, [1,0,0]);
     }
     var now = Date.now();
     var elapsed = now - exTime;
     exTime = now;
     var angle = Math.PI * 2 * elapsed/onerev;
-    mat4.rotate(V,V,angle, [0,1,0]);
+    mat4.rotate(uM,uM,angle, [0,1,0]);
 	
-	transformation_matrix.set(V,16);
+	transformation_matrix.set(uM,32);
 	
     xAnimationCounter++;
     gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
 	
-    gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);  
+    gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+	window.requestAnimationFrame(draw);	
 
     
 }
@@ -306,7 +313,8 @@ function update()
 function main()
 {
     init();
-    update();
+    //update();
+	draw();
     //transform();
     //rotate();
 };
