@@ -5,7 +5,7 @@ var T,R,P,V,uM, transformation_matrix;
 var uMlocation, Plocation, Vlocation;
 //const image = require('file-loader!./textura.png');
 const image = new Image();
-image.src = "textura.PNG";
+image.src = "board.jpg";
 
 function loadTexture(gl, url) {
   const texture = gl.createTexture();
@@ -97,7 +97,7 @@ function init()
     V = mat4.create();
 	uM = mat4.create();
     mat4.perspective(P, Math.PI/4, 1, 1, 100) // takie same jednostki jak w lookAT
-    mat4.lookAt(V,[2, 2, 5],[0,0,0],[0, 1, 0])
+    mat4.lookAt(V,[2, 10, 2],[0,0,0],[0, 1, 0])
 
     // przyporzadkowanie ubi do ubb
     // let color_ubb = 0;
@@ -105,12 +105,11 @@ function init()
 	let vertex_ubb = 0;
     gl.uniformBlockBinding(program, vertex_ubi, vertex_ubb);
 
-	var vertices = new Float32Array( [
-        -0.5, 0, 0.5,
-		0, 1, 0,		// 0
-		0.5, 0, 0.5,
-		-0.5, 0, -0.5,		// 1
-		0.5, 0, -0.5,          // 2
+	var vertices = new Float32Array( [	
+		1.5, 0, 1.5,     // 0
+		-1.5, 0, 1.5,   // 1
+		-1.5, 0, -1.5,   // 2
+		1.5, 0, -1.5,    // 3
 
 
 	]);
@@ -134,11 +133,11 @@ function init()
 	// 0.0,  1.0,
     // 1.0, 1.0,
 
+	0.0, 0.0,
 	1.0, 0.0,
-	0.5,  0.5,
-    0.0, 0.0,
+	//0.5,  0.5,
 	1.0,  1.0,
-    0.0, 1.0,
+    0.0, 1.0
     // 2,3,0
 
     // 1.0,  1.0
@@ -182,12 +181,13 @@ function init()
 	
     // dane o indeksach
     var indices = new Uint16Array([
-	                    0, 3, 4,
-                        4, 2, 0,
-						0, 2, 1,
-                        2, 4, 1,
-                        4, 3, 1,
-                        3, 0, 1,]);
+	                    2, 1, 0,
+                        0, 3, 2
+						//0, 2, 1,
+                        //2, 4, 1,
+                        //4, 3, 1,
+                        //3, 0, 1,
+						]);
 	//var indices = new Uint16Array([0,2,1]); 
 
     // tworzenie bufora indeksow EBO
@@ -286,20 +286,20 @@ function draw()
     //gl.uniformMatrix4fv(uMlocation,false , T );
     //gl.uniformMatrix4fv(Plocation,false , P );
     if ( xAnimationCounter == 0) {
-       mat4.rotate(uM,uM,-Math.PI/4, [1,0,0]);
+       mat4.rotate(uM,uM,Math.PI/4, [0,0,1]);
     }
-    var now = Date.now();
-    var elapsed = now - exTime;
-    exTime = now;
-    var angle = Math.PI * 2 * elapsed/onerev;
-    mat4.rotate(uM,uM,angle, [0,1,0]);
+    //var now = Date.now();
+    //var elapsed = now - exTime;
+    //exTime = now;
+    //var angle = Math.PI * 2 * elapsed/onerev;
+    //mat4.rotate(uM,uM,angle, [0,1,0]);
 	
-	transformation_matrix.set(uM,32);
+	//transformation_matrix.set(uM,32);
 	
     xAnimationCounter++;
-    gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
+    //gl.bufferSubData(gl.UNIFORM_BUFFER, 0, transformation_matrix, 0, 48);
 	
-    gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	window.requestAnimationFrame(draw);	
 
     
