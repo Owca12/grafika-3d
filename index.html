@@ -4,11 +4,66 @@
 <script type="text/javascript" src="https://www.cs.unm.edu/~angel/COURSERA/CODE/Common/flatten.js"></script>
 <script type="text/javascript" src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="require.js"></script>
+<script language="JavaScript" type="text/javascript">
+  var renderer = 0;
+
+  function run() {
+    var vertSrc = document.getElementById("code_vert").value;
+    var fracSrc = document.getElementById("code_frag").value;
+
+    renderer = new Renderer(vertSrc, fracSrc);
+    renderer.main();
+  }
+ </script>
 <meta charset="UTF-8">
 <title>Z1</title>
 </head>
-<body>
+<body onload="run();">
 <canvas id="glcanvas" width="1366" height="768"></canvas>
 <script src="scripts/pryzmat.js"></script>
+
+
+<table border="0" class="maintable" cellpadding="3px" cellspacing="3px">
+<tr style="vertical-align: top;">
+<td>Vertex shader: 
+<br><textarea cols="60" rows="10" class="code_input_vert" id="code_vert" wrap="logical">
+#version 300 es
+layout(location = 0) in vec4 vertex_position;
+layout(location = 1) in vec2 textureCoord;
+out vec2 vert_frag_text_coord;
+layout(std140) uniform Metrices
+{
+	mat4 P;
+	mat4 V;
+	mat4 uM;
+};
+void main()
+{
+	gl_Position = P*V*uM*vertex_position;
+	vert_frag_text_coord = textureCoord;
+}
+</textarea>
+<p id="code_vert_error" style="width: 200px;"></p>
+</td>
+
+<td>Fragment shader: <br><textarea cols="60" rows="10" class="code_input" id="code_frag" wrap="logical">
+#version 300 es
+precision mediump float;
+out vec4 frag_color;
+in vec3 vert_frag_color;
+in vec2 vert_frag_text_coord;
+uniform sampler2D text;
+void main()
+{
+	frag_color = texture(text,vert_frag_text_coord);
+}
+</textarea>
+<p id="code_frag_error" style="width: 200px;"></p>
+</td>
+</tr>
+</table>
 </body>
 </html>
+
+
+
