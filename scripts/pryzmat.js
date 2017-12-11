@@ -65,9 +65,10 @@ function Renderer(vertSrc, fragSrc)
 
 	function init()
 	{
+		let canvas;
 		// inicjalizacja webg2
 		try {
-			let canvas = document.querySelector("#glcanvas");
+			canvas = document.querySelector("#glcanvas");
 			gl = canvas.getContext("webgl2");
 		}
 		catch(e) {
@@ -106,9 +107,17 @@ function Renderer(vertSrc, fragSrc)
 		P = mat4.create();
 		V = mat4.create();
 		uM = mat4.create();
-		mat4.perspective(P, Math.PI/4, 1, 1, 100) // takie same jednostki jak w lookAT
-		mat4.lookAt(V,[2, 10, 2],[0,0,0],[0, 1, 0])
-		lightPos = vec3.fromValues(-1.0, 1.0, 1.0);
+		var rad = Math.PI / 180.0 * 1;
+
+
+    
+		mat4.perspective(P, Math.PI/4, 1, 0.1, 100) // takie same jednostki jak w lookAT
+		mat4.lookAt(V,[3, 10, 3],[0,0,0],[0, 0, 1])
+		// mat4.lookAt(V,
+               // 1.5*Math.cos(rad), 1.5*Math.sin(rad), 1.5, // eye
+               // 0.0, 0.0, 0.0, // look at
+               // 0.0, 0.0, 1.0); // up
+		lightPos = vec3.fromValues(3, 3.0, 3);
 
 		// przyporzadkowanie ubi do ubb
 		// let color_ubb = 0;
@@ -301,22 +310,10 @@ function Renderer(vertSrc, fragSrc)
 		// gl.bufferData(gl.UNIFORM_BUFFER, VM_matrix, gl.DYNAMIC_DRAW);
 		// gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 		
-		
-		// // tworzenie UBO
-		// var color_ubo = gl.createBuffer();
-		// gl.bindBuffer(gl.UNIFORM_BUFFER, color_ubo);
-		// gl.bufferData(gl.UNIFORM_BUFFER, triangle_color, gl.DYNAMIC_DRAW);
-		// gl.bindBuffer(gl.UNIFORM_BUFFER, null);
-
-		// ustawienia danych dla funkcji draw*
-		
 
 		
 		gl.bindVertexArray(vao);
-		//gl.bindVertexArray(color_vao);
-		// gl.bindBufferBase(gl.UNIFORM_BUFFER, color_ubb, color_ubo);
 		gl.bindBufferBase(gl.UNIFORM_BUFFER, vertex_ubb, vertex_ubo);
-		//gl.bindBufferBase(gl.UNIFORM_BUFFER, vertex_vm_ubb, vertex_vm_ubo);
 	}
 
 	var xAnimationCounter = 0;
@@ -329,10 +326,25 @@ function Renderer(vertSrc, fragSrc)
 		//gl.uniformMatrix4fv(uMlocation,false , T );
 		//gl.uniformMatrix4fv(Plocation,false , P );
 		if ( xAnimationCounter == 0) {
-		   mat4.rotate(V,V,Math.PI/4, [0,0,1]);
+		   mat4.rotate(uM,uM, -Math.PI/4, [1,0,0]);
 		}
+		var uVM = mat4.create();
+		mat4.multiply(uVM,V,uM);
 		var normalMatrix = new Float32Array(9);
-		mat3.normalFromMat4(normalMatrix, V);
+		mat3.normalFromMat4(normalMatrix, uVM);
+		//DEBUG
+		var normal = vec3.create();
+		vec3.transformMat3(normal,new Float32Array([1,0,0]),normalMatrix);
+		// END DEBUG
+		var i;
+		if ( xAnimationCounter == 0) {
+		for (i=0;i<9;i++)
+		{
+			console.log("Normal number: " + i + "and value: " + normalMatrix[i]);
+			console.log("uVM number: " + i + "and value: " + uVM[i]);
+			console.log("Normal vector number: " + i + "and value: " + normal[i]);
+		}
+		}
 		gl.uniformMatrix3fv(normalMatrixLoc, false, normalMatrix);
 		
 		var transformed = new Float32Array(3);

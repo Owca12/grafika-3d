@@ -51,8 +51,8 @@ void main()
 {
 	gl_Position = P*V*uM*vertex_position;
 	
-	//vertexCoordinates = (V*vertex_position).xyz;
-	//vec3 normal = uNormal*aVertexNormal;
+	vertexCoordinates = (V*uM*vertex_position).xyz;
+	normal = uNormal*aVertexNormal;
 	vert_frag_text_coord = textureCoord;
 }
 </textarea>
@@ -74,12 +74,12 @@ uniform vec3 lightPosition;
 
 void main()
 {
-	frag_color = texture(text,vert_frag_text_coord);
-	//vec3 lightVector = normalize(lightPosition-vertexCoordinates);
-	//vec3 n = normalize(normal);
-	//float diffuse = max(0.0, dot(n, lightVector));
-	//frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb;
-	//frag_color.a =  texture(text, vert_frag_text_coord).a;
+	//frag_color = texture(text,vert_frag_text_coord);
+	vec3 lightVector = normalize(lightPosition-vertexCoordinates);
+	vec3 n = normalize(normal);
+	float diffuse = max(0.0, dot(n, lightVector));
+	frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb;
+	frag_color.a =  texture(text, vert_frag_text_coord).a;
 }
 </textarea>
 <p id="code_frag_error" style="width: 200px;"></p>
