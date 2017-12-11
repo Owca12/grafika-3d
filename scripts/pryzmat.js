@@ -111,13 +111,13 @@ function Renderer(vertSrc, fragSrc)
 
 
     
-		mat4.perspective(P, Math.PI/4, 1, 0.1, 100) // takie same jednostki jak w lookAT
+		mat4.perspective(P, Math.PI/3, 1, 0.1, 100) // takie same jednostki jak w lookAT
 		mat4.lookAt(V,[3, 10, 3],[0,0,0],[0, 0, 1])
 		// mat4.lookAt(V,
                // 1.5*Math.cos(rad), 1.5*Math.sin(rad), 1.5, // eye
                // 0.0, 0.0, 0.0, // look at
                // 0.0, 0.0, 1.0); // up
-		lightPos = vec3.fromValues(3, 3.0, 3);
+		lightPos = vec3.fromValues(50, 50, 50);
 
 		// przyporzadkowanie ubi do ubb
 		// let color_ubb = 0;
@@ -137,10 +137,10 @@ function Renderer(vertSrc, fragSrc)
 		]);
 		
 		var normals = new Float32Array( [	
-			0, 0, 1,     // 0
-			-1, 0, 0,   // 1
-			0, 0, -1,   // 2
-			1, 0, 0,    // 3
+			0, 1, 0,     // 0
+			0, 1, 0,   // 1
+			0, 1, 0,   // 2
+			0, 1, 0,    // 3
 		]);
 		
 		var colors =  new Float32Array( [
@@ -326,7 +326,7 @@ function Renderer(vertSrc, fragSrc)
 		//gl.uniformMatrix4fv(uMlocation,false , T );
 		//gl.uniformMatrix4fv(Plocation,false , P );
 		if ( xAnimationCounter == 0) {
-		   mat4.rotate(uM,uM, -Math.PI/4, [1,0,0]);
+		   //mat4.rotate(uM,uM, -Math.PI/4, [1,0,0]);
 		}
 		var uVM = mat4.create();
 		mat4.multiply(uVM,V,uM);
