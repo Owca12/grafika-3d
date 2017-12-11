@@ -28,9 +28,19 @@
 <td>Vertex shader: 
 <br><textarea cols="60" rows="10" class="code_input_vert" id="code_vert" wrap="logical">
 #version 300 es
+// Light configuration
+//const vec3 lightPos = vec3(1.0, 1.0, 1.0);
+//const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
+//const vec3 specColor = vec3(1.0, 1.0, 1.0);
+
+uniform mat3 uNormal;
+
 layout(location = 0) in vec4 vertex_position;
 layout(location = 1) in vec2 textureCoord;
+layout(location = 2) in vec3 aVertexNormal;
 out vec2 vert_frag_text_coord;
+out vec3 vertexCoordinates;
+out vec3 normal;
 layout(std140) uniform Metrices
 {
 	mat4 P;
@@ -40,6 +50,9 @@ layout(std140) uniform Metrices
 void main()
 {
 	gl_Position = P*V*uM*vertex_position;
+	
+	//vertexCoordinates = (V*vertex_position).xyz;
+	//vec3 normal = uNormal*aVertexNormal;
 	vert_frag_text_coord = textureCoord;
 }
 </textarea>
@@ -51,11 +64,22 @@ void main()
 precision mediump float;
 out vec4 frag_color;
 in vec3 vert_frag_color;
+
 in vec2 vert_frag_text_coord;
 uniform sampler2D text;
+
+in vec3 vertexCoordinates;
+in vec3 normal;
+uniform vec3 lightPosition;
+
 void main()
 {
 	frag_color = texture(text,vert_frag_text_coord);
+	//vec3 lightVector = normalize(lightPosition-vertexCoordinates);
+	//vec3 n = normalize(normal);
+	//float diffuse = max(0.0, dot(n, lightVector));
+	//frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb;
+	//frag_color.a =  texture(text, vert_frag_text_coord).a;
 }
 </textarea>
 <p id="code_frag_error" style="width: 200px;"></p>

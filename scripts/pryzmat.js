@@ -3,11 +3,13 @@
 
 function Renderer(vertSrc, fragSrc)
 {
-	var gl, vertex_ubb, vertex_ubo, vertex_uniform_id;
-	var T,R,P,V,uM, transformation_matrix;
+	var gl, vertex_ubb, vertex_ubo, vertex_vm_ubo, vertex_uniform_id;
+	var T,R,P,V,uM, transformation_matrix, VM_matrix;
 	var uMlocation, Plocation, Vlocation;
 	var vertex_shader_source = vertSrc;
 	var fragment_shader_source = fragSrc;
+	var normalMatrixLoc, lightPosLoc;
+	var lightPos;
 	//const image = require('file-loader!./textura.png');
 	const image = new Image();
 	image.src = "board.jpg";
@@ -96,6 +98,9 @@ function Renderer(vertSrc, fragSrc)
 		// pobranie ubi
 		//var color_ubi = gl.getUniformBlockIndex(program, "TriangleColor");
 		var vertex_ubi = gl.getUniformBlockIndex(program, "Metrices");
+		//var vertex_vm_ubi = gl.getUniformBlockIndex(program, "uVM");
+		lightPosLoc = gl.getUniformLocation(program, 'lightPosition');
+		normalMatrixLoc = gl.getUniformLocation(program, 'uNormal');	
 		T = mat4.create();
 		R = mat4.create();
 		P = mat4.create();
@@ -103,20 +108,30 @@ function Renderer(vertSrc, fragSrc)
 		uM = mat4.create();
 		mat4.perspective(P, Math.PI/4, 1, 1, 100) // takie same jednostki jak w lookAT
 		mat4.lookAt(V,[2, 10, 2],[0,0,0],[0, 1, 0])
+		lightPos = vec3.fromValues(-1.0, 1.0, 1.0);
 
 		// przyporzadkowanie ubi do ubb
 		// let color_ubb = 0;
 		// gl.uniformBlockBinding(program, color_ubi, color_ubb);
 		let vertex_ubb = 0;
 		gl.uniformBlockBinding(program, vertex_ubi, vertex_ubb);
+		// let vertex_vm_ubb = 0;
+		// gl.uniformBlockBinding(program, vertex_vm_ubi, vertex_vm_ubb);
 
 		var vertices = new Float32Array( [	
-			1.5, 0, 1.5,     // 0
-			-1.5, 0, 1.5,   // 1
-			-1.5, 0, -1.5,   // 2
-			1.5, 0, -1.5,    // 3
+			0, 0, 1.5,     // 0
+			-1.5, 0, 0,   // 1
+			0, 0, -1.5,   // 2
+			1.5, 0, 0,    // 3
 
 
+		]);
+		
+		var normals = new Float32Array( [	
+			0, 0, 1,     // 0
+			-1, 0, 0,   // 1
+			0, 0, -1,   // 2
+			1, 0, 0,    // 3
 		]);
 		
 		var colors =  new Float32Array( [
@@ -183,6 +198,13 @@ function Renderer(vertSrc, fragSrc)
 		var texture_coord_buffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, texture_coord_buffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texture_coordinates), gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		
+		//normals VBO
+		var normal_coord_buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, normal_coord_buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 		
 		// dane o indeksach
 		var indices = new Uint16Array([
@@ -226,6 +248,11 @@ function Renderer(vertSrc, fragSrc)
 		gl.enableVertexAttribArray(1);
 		gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 2*4, 0);
 		
+		// // takie same dla aVertexNormal
+		gl.bindBuffer(gl.ARRAY_BUFFER, normal_coord_buffer);
+		gl.enableVertexAttribArray(2);
+		gl.vertexAttribPointer(2, 3, gl.FLOAT, gl.FALSE, 3*4, 0);
+		
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
 		gl.bindVertexArray(null);
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -233,6 +260,7 @@ function Renderer(vertSrc, fragSrc)
 
 		
 		transformation_matrix = new Float32Array(48);
+		VM_matrix = new Float32Array(32);
 		var i = 0;
 		for (i=0;i<16;i++)
 		{
@@ -258,12 +286,21 @@ function Renderer(vertSrc, fragSrc)
 		{
 			console.log("Variable number: " + i + "and value: " + transformation_matrix[i]);
 		}
-		
+		for (i=0; i<32; i++){
+			VM_matrix[i] =  transformation_matrix[16 + i];
+		}
 			// tworzenie UBO
 		vertex_ubo = gl.createBuffer();
 		gl.bindBuffer(gl.UNIFORM_BUFFER, vertex_ubo);
 		gl.bufferData(gl.UNIFORM_BUFFER, transformation_matrix, gl.DYNAMIC_DRAW);
 		gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+		
+		// tworzenie UBO dla VM
+		// vertex_vm_ubo = gl.createBuffer();
+		// gl.bindBuffer(gl.UNIFORM_BUFFER, vertex_vm_ubo);
+		// gl.bufferData(gl.UNIFORM_BUFFER, VM_matrix, gl.DYNAMIC_DRAW);
+		// gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+		
 		
 		// // tworzenie UBO
 		// var color_ubo = gl.createBuffer();
@@ -279,6 +316,7 @@ function Renderer(vertSrc, fragSrc)
 		//gl.bindVertexArray(color_vao);
 		// gl.bindBufferBase(gl.UNIFORM_BUFFER, color_ubb, color_ubo);
 		gl.bindBufferBase(gl.UNIFORM_BUFFER, vertex_ubb, vertex_ubo);
+		//gl.bindBufferBase(gl.UNIFORM_BUFFER, vertex_vm_ubb, vertex_vm_ubo);
 	}
 
 	var xAnimationCounter = 0;
@@ -291,8 +329,15 @@ function Renderer(vertSrc, fragSrc)
 		//gl.uniformMatrix4fv(uMlocation,false , T );
 		//gl.uniformMatrix4fv(Plocation,false , P );
 		if ( xAnimationCounter == 0) {
-		   mat4.rotate(uM,uM,Math.PI/4, [0,0,1]);
+		   mat4.rotate(V,V,Math.PI/4, [0,0,1]);
 		}
+		var normalMatrix = new Float32Array(9);
+		mat3.normalFromMat4(normalMatrix, V);
+		gl.uniformMatrix3fv(normalMatrixLoc, false, normalMatrix);
+		
+		var transformed = new Float32Array(3);
+		vec3.transformMat4(transformed, lightPos, V);
+		gl.uniform3fv(lightPosLoc, transformed);
 		//var now = Date.now();
 		//var elapsed = now - exTime;
 		//exTime = now;
