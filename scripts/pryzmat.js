@@ -8,8 +8,8 @@ function Renderer(vertSrc, fragSrc)
 	var uMlocation, Plocation, Vlocation;
 	var vertex_shader_source = vertSrc;
 	var fragment_shader_source = fragSrc;
-	var normalMatrixLoc, lightPosLoc;
-	var lightPos;
+	var normalMatrixLoc, lightPosLoc, attenuationLoc;
+	var lightPos, attenuationVal;
 	//const image = require('file-loader!./textura.png');
 	const image = new Image();
 	image.src = "board.jpg";
@@ -101,7 +101,9 @@ function Renderer(vertSrc, fragSrc)
 		var vertex_ubi = gl.getUniformBlockIndex(program, "Metrices");
 		//var vertex_vm_ubi = gl.getUniformBlockIndex(program, "uVM");
 		lightPosLoc = gl.getUniformLocation(program, 'lightPosition');
-		normalMatrixLoc = gl.getUniformLocation(program, 'uNormal');	
+		normalMatrixLoc = gl.getUniformLocation(program, 'uNormal');
+		attenuationLoc = gl.getUniformLocation(program, 'uAttenuationCoefficient');
+		
 		T = mat4.create();
 		R = mat4.create();
 		P = mat4.create();
@@ -117,8 +119,8 @@ function Renderer(vertSrc, fragSrc)
                // 1.5*Math.cos(rad), 1.5*Math.sin(rad), 1.5, // eye
                // 0.0, 0.0, 0.0, // look at
                // 0.0, 0.0, 1.0); // up
-		lightPos = vec3.fromValues(50, 50, 50);
-
+		lightPos = vec3.fromValues(0, 10, 0);
+		attenuationVal = vec3.fromValues(1,10,1);
 		// przyporzadkowanie ubi do ubb
 		// let color_ubb = 0;
 		// gl.uniformBlockBinding(program, color_ubi, color_ubb);
@@ -273,7 +275,7 @@ function Renderer(vertSrc, fragSrc)
 		var i = 0;
 		for (i=0;i<16;i++)
 		{
-			console.log("P number: " + i + "and value: " + P[i]);
+		//	console.log("P number: " + i + "and value: " + P[i]);
 		}
 		for (i = 0; i < 16; i++) 
 		{
@@ -290,10 +292,10 @@ function Renderer(vertSrc, fragSrc)
 			transformation_matrix[32+i] = uM[i];
 		}
 		
-		console.log("Cheking transformation array");
+		//console.log("Cheking transformation array");
 		for (i=0;i<48;i++)
 		{
-			console.log("Variable number: " + i + "and value: " + transformation_matrix[i]);
+			//console.log("Variable number: " + i + "and value: " + transformation_matrix[i]);
 		}
 		for (i=0; i<32; i++){
 			VM_matrix[i] =  transformation_matrix[16 + i];
@@ -340,9 +342,9 @@ function Renderer(vertSrc, fragSrc)
 		if ( xAnimationCounter == 0) {
 		for (i=0;i<9;i++)
 		{
-			console.log("Normal number: " + i + "and value: " + normalMatrix[i]);
-			console.log("uVM number: " + i + "and value: " + uVM[i]);
-			console.log("Normal vector number: " + i + "and value: " + normal[i]);
+			//console.log("Normal number: " + i + "and value: " + normalMatrix[i]);
+			//console.log("uVM number: " + i + "and value: " + uVM[i]);
+			//console.log("Normal vector number: " + i + "and value: " + normal[i]);
 		}
 		}
 		gl.uniformMatrix3fv(normalMatrixLoc, false, normalMatrix);
@@ -350,6 +352,8 @@ function Renderer(vertSrc, fragSrc)
 		var transformed = new Float32Array(3);
 		vec3.transformMat4(transformed, lightPos, V);
 		gl.uniform3fv(lightPosLoc, transformed);
+		gl.uniform3fv(attenuationLoc, attenuationVal);
+		
 		//var now = Date.now();
 		//var elapsed = now - exTime;
 		//exTime = now;
@@ -392,7 +396,7 @@ function Renderer(vertSrc, fragSrc)
 			return shader;
 		}
 
-		console.log(gl.getShaderInfoLog(shader));
+		//console.log(gl.getShaderInfoLog(shader));
 		gl.deleteShader(shader);
 	}
 
@@ -408,7 +412,7 @@ function Renderer(vertSrc, fragSrc)
 			return program;
 		}
 
-		console.log(gl.getProgramInfoLog(program));
+		//console.log(gl.getProgramInfoLog(program));
 		gl.deleteProgram(program);
 	}
 }

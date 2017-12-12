@@ -71,13 +71,17 @@ uniform sampler2D text;
 in vec3 vertexCoordinates;
 in vec3 normal;
 uniform vec3 lightPosition;
+uniform vec3 uAttenuationCoefficient;
 
 void main()
 {
 	//frag_color = texture(text,vert_frag_text_coord);
 	vec3 lightVector = normalize(lightPosition-vertexCoordinates);
+	float distanceToLight = length(lightPosition-vertexCoordinates); 
 	vec3 n = normalize(normal);
-	float diffuse = max(0.0, dot(n, lightVector));
+	float attenuation =  10.0/(uAttenuationCoefficient[0]+ distanceToLight*( uAttenuationCoefficient[1]+distanceToLight*uAttenuationCoefficient[2]) ); 
+	float diffuse = attenuation*max(0.0, dot(n, lightVector));
+	
 	frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb;
 	frag_color.a =  texture(text, vert_frag_text_coord).a;
 }
