@@ -1,6 +1,5 @@
 "use strict";
 
-
 function Renderer(vertSrc, fragSrc)
 {
 	var gl, vertex_ubb, vertex_ubo, vertex_vm_ubo, vertex_uniform_id;
@@ -8,8 +7,14 @@ function Renderer(vertSrc, fragSrc)
 	var uMlocation, Plocation, Vlocation;
 	var vertex_shader_source = vertSrc;
 	var fragment_shader_source = fragSrc;
-	var normalMatrixLoc, lightPosLoc, attenuationLoc;
-	var lightPos, attenuationVal;
+	var normalMatrixLoc, lightPosLoc, attenuationLoc, uSpecularExponentLoc;
+	var lightPos, attenuationVal, uSpecularExponentVal;
+	uSpecularExponentVal= parseFloat(1000);
+	var x=0;
+	var y=1.5;
+	var z=0;
+	//var x= document.getElementById("txtx").value;
+	//console.log(x);
 	//const image = require('file-loader!./textura.png');
 	const image = new Image();
 	image.src = "board.jpg";
@@ -103,6 +108,7 @@ function Renderer(vertSrc, fragSrc)
 		lightPosLoc = gl.getUniformLocation(program, 'lightPosition');
 		normalMatrixLoc = gl.getUniformLocation(program, 'uNormal');
 		attenuationLoc = gl.getUniformLocation(program, 'uAttenuationCoefficient');
+		uSpecularExponentLoc = gl.getUniformLocation(program, 'uSpecularExponent');
 		
 		T = mat4.create();
 		R = mat4.create();
@@ -114,13 +120,16 @@ function Renderer(vertSrc, fragSrc)
 
     
 		mat4.perspective(P, Math.PI/3, 1, 0.1, 100) // takie same jednostki jak w lookAT
-		mat4.lookAt(V,[3, 10, 3],[0,0,0],[0, 0, 1])
+		mat4.lookAt(V,[1, 10, 1],[0,0,0],[0, 1, 0])
 		// mat4.lookAt(V,
                // 1.5*Math.cos(rad), 1.5*Math.sin(rad), 1.5, // eye
                // 0.0, 0.0, 0.0, // look at
-               // 0.0, 0.0, 1.0); // up
-		lightPos = vec3.fromValues(0, 10, 0);
+			   // 0.0, 0.0, 1.0); // up
+		
+		lightPos = vec3.fromValues(x, y, z);
 		attenuationVal = vec3.fromValues(1,10,1);
+		console.log(" x = ",x," y = ",y," z = ",z);
+		console.log("uSpecularExponentVal=",uSpecularExponentVal);
 		// przyporzadkowanie ubi do ubb
 		// let color_ubb = 0;
 		// gl.uniformBlockBinding(program, color_ubi, color_ubb);
@@ -353,7 +362,7 @@ function Renderer(vertSrc, fragSrc)
 		vec3.transformMat4(transformed, lightPos, V);
 		gl.uniform3fv(lightPosLoc, transformed);
 		gl.uniform3fv(attenuationLoc, attenuationVal);
-		
+		gl.uniform1f(uSpecularExponentLoc,uSpecularExponentVal)
 		//var now = Date.now();
 		//var elapsed = now - exTime;
 		//exTime = now;

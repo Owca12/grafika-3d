@@ -21,8 +21,6 @@
 <body onload="run();">
 <canvas id="glcanvas" width="1366" height="768"></canvas>
 <script src="scripts/pryzmat.js"></script>
-
-
 <table border="0" class="maintable" cellpadding="3px" cellspacing="3px">
 <tr style="vertical-align: top;">
 <td>Vertex shader: 
@@ -41,6 +39,7 @@ layout(location = 2) in vec3 aVertexNormal;
 out vec2 vert_frag_text_coord;
 out vec3 vertexCoordinates;
 out vec3 normal;
+
 layout(std140) uniform Metrices
 {
 	mat4 P;
@@ -72,7 +71,7 @@ in vec3 vertexCoordinates;
 in vec3 normal;
 uniform vec3 lightPosition;
 uniform vec3 uAttenuationCoefficient;
-
+uniform float uSpecularExponent;
 void main()
 {
 	//frag_color = texture(text,vert_frag_text_coord);
@@ -81,8 +80,16 @@ void main()
 	vec3 n = normalize(normal);
 	float attenuation =  10.0/(uAttenuationCoefficient[0]+ distanceToLight*( uAttenuationCoefficient[1]+distanceToLight*uAttenuationCoefficient[2]) ); 
 	float diffuse = attenuation*max(0.0, dot(n, lightVector));
-	
-	frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb;
+	float specular=0.0;
+	if(diffuse>0.0) {
+			vec3 viewVectorInViewSpace=normalize(-vertexCoordinates);
+			vec3 halfVector = normalize(viewVectorInViewSpace+lightVector);
+			specular=attenuation*pow(max(0.0,dot(halfVector,n)),
+			uSpecularExponent); 
+			
+	}
+
+	frag_color.rgb = diffuse*texture(text, vert_frag_text_coord).rgb + vec3(1,1,1)*specular;
 	frag_color.a =  texture(text, vert_frag_text_coord).a;
 }
 </textarea>
